@@ -60,3 +60,23 @@
   transform: rotate(-15deg);
   display: block;
 }
+/* MEVCUT KODLARININ EN ALTINA EKLENECEK */
+
+@media (max-width: 768px) {
+  .uno-card {
+    width: 75px;
+    height: 110px;
+    border-radius: 10px;
+    padding: 4px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  }
+  .uno-card-inner {
+    font-size: 35px;
+    border-radius: 6px;
+  }
+  .uno-card-mini {
+    font-size: 11px;
+  }
+  .mini-top-left { top: 2px; left: 4px; }
+  .mini-bottom-right { bottom: 2px; right: 4px; }
+}

@@ -53,3 +53,19 @@ body {
   align-items: center;
   gap: 10px;
 }
+/* MEVCUT KODLARININ EN ALTINA EKLENECEK */
+
+body {
+  /* Telefonda istemsiz yakınlaştırmayı (zoom) engeller */
+  touch-action: manipulation; 
+}
+
+@media (max-width: 768px) {
+  .toast-notification {
+    width: 90%;
+    font-size: 14px;
+    text-align: center;
+    padding: 8px 16px;
+    justify-content: center;
+  }
+}
