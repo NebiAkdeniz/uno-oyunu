@@ -1,0 +1,36 @@
+/* src/components/Card.css */
+.uno-card {
+  color: black;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  border: 2px solid #ccc;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  
+  /* Varsayılan masaüstü boyutları */
+  width: 100px;
+  height: 150px;
+  font-size: 24px;
+}
+
+/* Tablet ekranları için boyutları küçültüyoruz (768px ve altı) */
+@media (max-width: 768px) {
+  .uno-card {
+    width: 70px;
+    height: 105px;
+    font-size: 18px;
+    border-radius: 6px;
+  }
+}
+
+/* Mobil ekranlar için daha da küçültüyoruz (480px ve altı) */
+@media (max-width: 480px) {
+  .uno-card {
+    width: 50px;
+    height: 75px;
+    font-size: 14px;
+    border-radius: 4px;
+  }
+}
