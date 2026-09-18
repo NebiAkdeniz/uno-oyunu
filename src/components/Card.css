@@ -3,81 +3,101 @@
   height: 160px;
   background-color: #f8f9fa;
   border-radius: 14px;
-  padding: 6px;
+  padding: 5px;
   box-shadow: 0 8px 15px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(0,0,0,0.1);
   box-sizing: border-box;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   position: relative;
+}
+
+/* Kartın iç yüzeyi */
+.uno-card-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  position: relative;
   overflow: hidden;
 }
 
-/* Kartlara üstten vuran ışık parlaması efekti (Glass Glare) */
-.uno-card::after {
+/* Üstten vuran şık cam parlaması */
+.uno-card-inner::after {
   content: "";
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 40%;
-  background: linear-gradient(to bottom, rgba(255,255,255,0.4) 0%, transparent 100%);
-  border-radius: 8px 8px 0 0;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.35) 0%, transparent 100%);
   pointer-events: none;
 }
 
-.uno-card-inner {
-  width: 100%;
-  height: 100%;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 55px;
-  text-shadow: 2px 3px 0px rgba(0,0,0,0.4);
-  background-image: 
-    radial-gradient(ellipse 80% 60% at 50% 50%, 
-      transparent 40%, 
-      rgba(0,0,0,0.15) 100%
-    );
-  position: relative;
+/* Beyaz Oval Alan */
+.uno-card-oval {
+  position: absolute;
+  width: 75%;
+  height: 80%;
+  background-color: white;
+  border-radius: 50%;
+  transform: rotate(-25deg);
+  opacity: 0.95;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.15);
 }
 
-/* Sol üst ve sağ alt köşedeki küçük sayılar (GERÇEK UNO DÜZENİ) */
+/* Ortadaki Büyük Rakam */
+.uno-card-center-value {
+  z-index: 2;
+  font-size: 45px;
+  font-weight: 900;
+  text-shadow: 2px 3px 0px rgba(0,0,0,0.2);
+  transform: rotate(-15deg);
+  line-height: 1;
+}
+
+/* KÖŞELERDEKİ MİNİ RAKAMLAR (Garanti Görünüm) */
 .uno-card-mini {
   position: absolute;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 900;
-  text-shadow: 1px 1px 0px rgba(0,0,0,0.6);
-  z-index: 3;
-}
-.mini-top-left { top: 6px; left: 8px; }
-.mini-bottom-right { bottom: 6px; right: 8px; transform: rotate(180deg); }
-
-/* Ortadaki asıl değerin çerçevesi */
-.uno-card-value {
-  z-index: 2;
-  transform: rotate(-15deg);
-  display: block;
+  color: white;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+  z-index: 10;
 }
 
-/* TELEFON (RESPONSIVE) GÖRÜNÜMÜ İÇİN ÖZEL AYARLAR */
+.mini-top-left {
+  top: 6px;
+  left: 8px;
+}
+
+.mini-bottom-right {
+  bottom: 6px;
+  right: 8px;
+  transform: rotate(180deg);
+}
+
+/* TELEFON (RESPONSIVE) GÖRÜNÜMÜ */
 @media (max-width: 768px) {
   .uno-card {
     width: 75px;
     height: 110px;
     border-radius: 10px;
-    padding: 4px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    padding: 3px;
   }
-  .uno-card-inner {
-    font-size: 35px;
-    border-radius: 6px;
+  .uno-card-center-value {
+    font-size: 30px;
   }
-  /* Mobilde kartlar üst üste bindiği için köşedeki mini sayıları biraz daha belirgin yapıyoruz */
   .uno-card-mini {
-    font-size: 13px;
+    font-size: 11px;
   }
-  .mini-top-left { top: 4px; left: 6px; }
-  .mini-bottom-right { bottom: 4px; right: 6px; }
+  .mini-top-left {
+    top: 4px;
+    left: 6px;
+  }
+  .mini-bottom-right {
+    bottom: 4px;
+    right: 6px;
+  }
 }
