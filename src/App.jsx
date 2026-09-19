@@ -37,31 +37,51 @@ function App() {
     setTimeout(() => setGameMessage(""), 2500); 
   };
 
-  useEffect(() => {
-    const fetchDeck = async () => {
-      const cards = await getCards();
-      
-      if (cards.length > 0) {
-        for (let i = cards.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [cards[i], cards[j]] = [cards[j], cards[i]];
-        }
-        setMiddleCard(cards[0]); 
-        const remainingCards = cards.slice(1);
-        
-        const newPlayerHand = [];
-        const newComputerHand = [];
-        const kartSayisi = Math.min(remainingCards.length, 14); 
-        
-        for (let i = 0; i < kartSayisi; i++) {
-          if (i % 2 === 0) newPlayerHand.push(remainingCards[i]);
-          else newComputerHand.push(remainingCards[i]);
-        }
-        setPlayerHand(newPlayerHand);
-        setComputerHand(newComputerHand);
+  // YENİ: Oyunu sıfırlayıp baştan başlatan ana fonksiyon
+  const oyunuYenidenBaslat = async (ilkKurulum = false) => {
+    // Masayı geçici olarak temizle (Yeniden yükleniyor hissi verir)
+    setPlayerHand([]);
+    setComputerHand([]);
+    setMiddleCard(null);
+    setIsPlayerTurn(true);
+    setShowColorPicker(false);
+    setPendingWildCard(null);
+    setShowUnoButton(false);
+    
+    if (!ilkKurulum) showMessage("🔄 Masadaki kartlar toplanıp yeniden dağıtılıyor...");
+
+    const cards = await getCards();
+    
+    if (cards.length > 0) {
+      // Desteyi karıştır
+      for (let i = cards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [cards[i], cards[j]] = [cards[j], cards[i]];
       }
-    };
-    fetchDeck();
+      setMiddleCard(cards[0]); 
+      const remainingCards = cards.slice(1);
+      
+      const newPlayerHand = [];
+      const newComputerHand = [];
+      const kartSayisi = Math.min(remainingCards.length, 14); 
+      
+      for (let i = 0; i < kartSayisi; i++) {
+        if (i % 2 === 0) newPlayerHand.push(remainingCards[i]);
+        else newComputerHand.push(remainingCards[i]);
+      }
+      
+      setPlayerHand(newPlayerHand);
+      setComputerHand(newComputerHand);
+      
+      if (!ilkKurulum) {
+        setTimeout(() => showMessage("✨ Oyun yeniden başladı! Sıra Sende."), 1000);
+      }
+    }
+  };
+
+  // Uygulama ilk açıldığında oyunu kur
+  useEffect(() => {
+    oyunuYenidenBaslat(true);
   }, []);
 
   const tetikleUno = () => {
@@ -81,7 +101,7 @@ function App() {
   };
 
   const kartOyna = (oynananKart) => {
-    if (!isPlayerTurn || showColorPicker) return;
+    if (!isPlayerTurn || showColorPicker || playerHand.length === 0 || computerHand.length === 0) return;
 
     const isFirstCardBlackWild = middleCard.color === 'black'; 
     const isColorMatch = oynananKart.color === middleCard.color;
@@ -103,6 +123,11 @@ function App() {
       setPlayerHand(kalanKartlar);
       if (kalanKartlar.length === 1) tetikleUno();
 
+      if (kalanKartlar.length === 0) {
+        showMessage("🎉 TEBRİKLER, OYUNU KAZANDIN!");
+        return;
+      }
+
       if (oynananKart.value === 'skip' || oynananKart.value === 'reverse') {
         showMessage("🔄 Sıra atlandı! Tekrar oyna.");
       } else if (oynananKart.value === '+2') {
@@ -119,6 +144,13 @@ function App() {
   const renkSec = (secilenRenk) => {
     setMiddleCard({ ...pendingWildCard, color: secilenRenk });
     setShowColorPicker(false);
+    
+    if (playerHand.length === 0) {
+       showMessage("🎉 TEBRİKLER, OYUNU KAZANDIN!");
+       setPendingWildCard(null);
+       return;
+    }
+
     if (pendingWildCard.value === '+4') {
       setComputerHand(prev => [...prev, ...kartUret(4)]);
       showMessage(`🎨 Renk değişti. Rakip 4 kart çekti!`);
@@ -129,7 +161,8 @@ function App() {
   };
 
   const destedenKartCek = () => {
-    if (!isPlayerTurn || showColorPicker) return;
+    if (!isPlayerTurn || showColorPicker || playerHand.length === 0 || computerHand.length === 0) return;
+    
     const yeniKart = kartUret(1)[0];
     setPlayerHand([...playerHand, yeniKart]);
 
@@ -158,6 +191,13 @@ function App() {
         if (playableCard) {
           const kalanBotKartlari = computerHand.filter((kart) => kart.id !== playableCard.id);
           setComputerHand(kalanBotKartlari);
+          
+          if (kalanBotKartlari.length === 0) {
+            setMiddleCard(playableCard);
+            showMessage("🤖 RAKİP KAZANDI!");
+            return;
+          }
+
           const isWild = playableCard.type === 'wild' || playableCard.value === 'wild' || playableCard.value === '+4';
           
           if (isWild) {
@@ -194,7 +234,6 @@ function App() {
     }
   }, [isPlayerTurn, computerHand, middleCard, playerHand]);
 
-  // YENİ: Kartları sağa ve sola yayan translateX eksen hesaplaması (xOffset) eklendi
   const getFanStyle = (index, total) => {
     const middle = (total - 1) / 2;
     const offset = index - middle;
@@ -266,25 +305,38 @@ function App() {
               boxShadow: '-5px 5px 15px rgba(0,0,0,0.5)', backgroundImage: 'repeating-linear-gradient(45deg, #e74c3c, #e74c3c 10px, #c0392b 10px, #c0392b 20px)'
             }}></div>
           ))
-        ) : (
-          <h2 style={{ color: '#f1c40f', fontSize: isMobile ? '24px' : '32px' }}>🤖 RAKİP KAZANDI</h2>
-        )}
+        ) : middleCard && playerHand.length > 0 ? (
+          /* YENİ: RAKİP KAZANIRSA ÇIKACAK OLAN BUTON (Kırmızı tonlarında) */
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', zIndex: 100 }}>
+            <h2 style={{ color: '#f1c40f', fontSize: isMobile ? '24px' : '32px', textShadow: '0 5px 15px rgba(0,0,0,0.5)' }}>🤖 RAKİP KAZANDI</h2>
+            <button 
+              onClick={() => oyunuYenidenBaslat(false)} 
+              style={{ padding: '10px 25px', borderRadius: '30px', background: 'linear-gradient(135deg, #e74c3c, #c0392b)', color: 'white', border: 'none', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer', boxShadow: '0 5px 15px rgba(231, 76, 60, 0.4), inset 0 2px 2px rgba(255,255,255,0.3)', transition: 'transform 0.2s' }}
+              onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'} 
+              onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              🔄 Tekrar Oyna
+            </button>
+          </div>
+        ) : null}
       </header>
 
       {/* MASA ORTASI */}
       <section style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: isMobile ? '20px' : '30px', transform: `rotateX(20deg) scale(${isMobile ? 0.75 : 0.95})` }}>
         
-        <div style={{ 
-          display: 'flex', alignItems: 'center', gap: '10px',
-          background: isPlayerTurn ? 'linear-gradient(135deg, rgba(46,204,113,0.2), rgba(39,174,96,0.5))' : 'linear-gradient(135deg, rgba(231,76,60,0.2), rgba(192,57,43,0.5))',
-          border: `1px solid ${isPlayerTurn ? 'rgba(46,204,113,0.6)' : 'rgba(231,76,60,0.6)'}`,
-          padding: isMobile ? '8px 20px' : '12px 35px', borderRadius: '40px', color: 'white', 
-          fontSize: isMobile ? '16px' : '20px', fontWeight: '800',
-          boxShadow: `0 10px 30px ${isPlayerTurn ? 'rgba(46,204,113,0.2)' : 'rgba(231,76,60,0.2)'}`,
-          backdropFilter: 'blur(10px)', transition: 'all 0.5s'
-        }}>
-          {isPlayerTurn ? "✨ SENİN SIRAN" : "⏳ RAKİP OYNUYOR"}
-        </div>
+        {(playerHand.length > 0 && computerHand.length > 0) && (
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: '10px',
+            background: isPlayerTurn ? 'linear-gradient(135deg, rgba(46,204,113,0.2), rgba(39,174,96,0.5))' : 'linear-gradient(135deg, rgba(231,76,60,0.2), rgba(192,57,43,0.5))',
+            border: `1px solid ${isPlayerTurn ? 'rgba(46,204,113,0.6)' : 'rgba(231,76,60,0.6)'}`,
+            padding: isMobile ? '8px 20px' : '12px 35px', borderRadius: '40px', color: 'white', 
+            fontSize: isMobile ? '16px' : '20px', fontWeight: '800',
+            boxShadow: `0 10px 30px ${isPlayerTurn ? 'rgba(46,204,113,0.2)' : 'rgba(231,76,60,0.2)'}`,
+            backdropFilter: 'blur(10px)', transition: 'all 0.5s'
+          }}>
+            {isPlayerTurn ? "✨ SENİN SIRAN" : "⏳ RAKİP OYNUYOR"}
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: isMobile ? '30px' : '60px', alignItems: 'center' }}>
           
@@ -294,9 +346,9 @@ function App() {
               width: isMobile ? '95px' : '120px', height: isMobile ? '142px' : '175px', 
               backgroundColor: '#1a1a1a', border: '5px solid #f8f9fa', borderRadius: '16px', 
               display: 'flex', justifyContent: 'center', alignItems: 'center', 
-              cursor: isPlayerTurn && !showColorPicker ? 'pointer' : 'not-allowed', 
-              boxShadow: isPlayerTurn ? '2px 2px 0 #fff, 4px 4px 0 #ddd, 6px 6px 0 #bbb, 15px 15px 30px rgba(0,0,0,0.7)' : '1px 1px 0 #555, 2px 2px 0 #444, 3px 3px 0 #333, 10px 10px 20px rgba(0,0,0,0.6)',
-              transform: isPlayerTurn ? 'translateY(-10px) translateX(-5px)' : 'none', 
+              cursor: (isPlayerTurn && !showColorPicker && playerHand.length > 0 && computerHand.length > 0) ? 'pointer' : 'not-allowed', 
+              boxShadow: (isPlayerTurn && playerHand.length > 0 && computerHand.length > 0) ? '2px 2px 0 #fff, 4px 4px 0 #ddd, 6px 6px 0 #bbb, 15px 15px 30px rgba(0,0,0,0.7)' : '1px 1px 0 #555, 2px 2px 0 #444, 3px 3px 0 #333, 10px 10px 20px rgba(0,0,0,0.6)',
+              transform: (isPlayerTurn && playerHand.length > 0 && computerHand.length > 0) ? 'translateY(-10px) translateX(-5px)' : 'none', 
               transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)', 
               backgroundImage: 'repeating-linear-gradient(45deg, #e74c3c, #e74c3c 15px, #c0392b 15px, #c0392b 30px)'
             }}
@@ -314,7 +366,7 @@ function App() {
         </div>
       </section>
 
-      {/* YELPAZE OYUNCU BÖLGESİ (Düzeltildi) */}
+      {/* YELPAZE OYUNCU BÖLGESİ */}
       <footer style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', paddingBottom: isMobile ? '10px' : '20px', perspective: '1000px' }}>
         <div style={{ display: 'flex', position: 'relative', width: '0', height: isMobile ? '110px' : '160px', justifyContent: 'center' }}>
           {playerHand.length > 0 ? (
@@ -327,21 +379,21 @@ function App() {
                   onClick={() => kartOyna(card)} 
                   style={{ 
                     position: 'absolute',
-                    cursor: isPlayerTurn && !showColorPicker ? 'pointer' : 'not-allowed', 
-                    opacity: isPlayerTurn && !showColorPicker ? 1 : 0.6, 
+                    cursor: (isPlayerTurn && !showColorPicker && computerHand.length > 0) ? 'pointer' : 'not-allowed', 
+                    opacity: (isPlayerTurn && !showColorPicker && computerHand.length > 0) ? 1 : 0.6, 
                     transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)', 
                     transformOrigin: 'bottom center', 
                     transform: fanStyle.transform,
                     zIndex: fanStyle.zIndex
                   }} 
                   onMouseOver={(e) => { 
-                    if (isPlayerTurn && !showColorPicker && !isMobile) { 
+                    if (isPlayerTurn && !showColorPicker && !isMobile && computerHand.length > 0) { 
                       e.currentTarget.style.transform = `translateX(${fanStyle.xOffset}px) rotate(0deg) translateY(-30px) scale(1.15)`; 
                       e.currentTarget.style.zIndex = 1000; 
                     }
                   }} 
                   onMouseOut={(e) => { 
-                    if (isPlayerTurn && !showColorPicker && !isMobile) { 
+                    if (isPlayerTurn && !showColorPicker && !isMobile && computerHand.length > 0) { 
                       e.currentTarget.style.transform = fanStyle.transform; 
                       e.currentTarget.style.zIndex = fanStyle.zIndex; 
                     }
@@ -351,9 +403,20 @@ function App() {
                 </div>
               );
             })
-          ) : (
-            <h2 style={{ color: '#2ecc71', fontSize: isMobile ? '28px' : '40px', textShadow: '0 10px 20px rgba(0,0,0,0.8)', zIndex: 100 }}>🎉 KAZANDIN!</h2>
-          )}
+          ) : middleCard && computerHand.length > 0 ? (
+            /* YENİ: OYUNCU KAZANIRSA ÇIKACAK OLAN BUTON (Mavi tonlarında) */
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', zIndex: 100 }}>
+              <h2 style={{ color: '#2ecc71', fontSize: isMobile ? '28px' : '40px', textShadow: '0 10px 20px rgba(0,0,0,0.8)' }}>🎉 KAZANDIN!</h2>
+              <button 
+                onClick={() => oyunuYenidenBaslat(false)} 
+                style={{ padding: '12px 35px', borderRadius: '30px', background: 'linear-gradient(135deg, #3498db, #2980b9)', color: 'white', border: 'none', fontWeight: '900', fontSize: '18px', cursor: 'pointer', boxShadow: '0 8px 20px rgba(52, 152, 219, 0.5), inset 0 2px 2px rgba(255,255,255,0.4)', transition: 'transform 0.2s' }}
+                onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'} 
+                onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                YENİDEN OYNA
+              </button>
+            </div>
+          ) : null}
         </div>
       </footer>
     </div>
